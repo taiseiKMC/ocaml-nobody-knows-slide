@@ -67,7 +67,7 @@
 \title[]{誰も知らない OCaml\\{\small 僕も知らない}}%[略タイトル]{タイトル}
 \author[]{\large KMCID: taisei}%[略名前]{名前}
 %\institute[]{B4}%[略所属]{所属}
-\date{\large May\ 9TH\ 2022}%日付
+\date{5/9/2022}%日付
 
 \begin{document}
     
@@ -96,22 +96,44 @@
         \begin{itemize}
             \item たしか39代副会長
             \item 京大工情報計算機 $\rightarrow$ 京大院情報学研究科通信情報システム \\
-            $\rightarrow$ エンジニャ〜
+            $\rightarrow$ 京都在住エンジニャ
             \item 競プロCTF中退
-            \item EXVS猿
+            \item EXVS猿\footnote{出典: ゲーミングお嬢様}
         \end{itemize}
     \end{frame}
     \setbeamertemplate{background}
     {}
 
-    \begin{frame}[fragile]\frametitle{OCaml}
-        ここ数年 OCaml ばっかり書いてる
+\begin{comment}
+    \begin{frame}[fragile]\frametitle{近況}
         \begin{itemize}
-            \item OCaml : Objective Caml
+            \item 昨日しまなみ海道を走ってきました
+        \end{itemize}
+    \end{frame}
+    \setbeamertemplate{background}
+    {}
+\end{comment}
+
+    \begin{frame}[fragile]\frametitle{やること}
+        \begin{itemize}
+            \item ここ数年 OCaml ばっかり書いてる
+            \item ここ数年で言語の更新や新機能の追加が加速した気がする
+            \item OCaml 書いててこんなんできるんだ〜ってなったを紹介
+        \end{itemize}
+        \begin{figure}[htbp]
+            \begin{center}
+                \includegraphics[width=3cm]{camel.jpeg}
+            \end{center}
+        \end{figure}
+    \end{frame}
+
+    \begin{frame}[fragile]\frametitle{OCaml}
+        \begin{itemize}
+            \item OCaml \footnote{知らない人は \cite{igarashi}, \cite{ksuenaga} 辺りを参照} : Objective Caml
             \begin{itemize}
-                \item Caml : Category Abstruct Machine Language \footnote{Meta Languageだと思っていたけれど違った}らしい
+                \item Caml : Categorical Abstruct Machine Language \footnote{Meta Languageだと思っていたけれど違った}らしい
             \end{itemize}
-            \item ML方言 関数型プログラミング言語の一つに分類されがち
+            \item ML\footnote{Machine Learning ではない} 方言 関数型プログラミング言語の一つに分類されがち
             \item 計算機コースの人は必修
         \end{itemize}
     \end{frame}
@@ -129,10 +151,7 @@ let area sp = match sp with (* 関数定義. sp が Shape か Cirle かで分岐
     | Circle (_, r) -> let r = float_of_int r in r *. r *. pi
 \end{verbatimtab}
         \end{exampleblock}
-
-        \footnote{知らない人は
-        \cite{igarashi}, \cite{ksuenaga}
-        辺りを参照}
+        Circle と Square の 2 種類の shape を定義し, shape の面積を求める関数 area を定義
     \end{frame}
 
     \begin{frame}[fragile]\frametitle{こんなの}
@@ -141,32 +160,32 @@ let area sp = match sp with (* 関数定義. sp が Shape か Cirle かで分岐
             \begin{verbatimtab}
 module List = struct
     type 'a list = Nil | Cons of 'a * 'a list (* 多相型 *)
-    let rec map f : ('a -> 'b) -> 'a list -> 'b list = (* 再帰関数定義 *)
-        function
+    let rec map : ('a -> 'b) -> 'a list -> 'b list = (* 再帰関数定義 *)
+        fun f -> function
         | Nil -> Nil
         | Cons (h, t) -> Cons (f h, map f t)
 end
-(* 部分適用 *)
-let double_list : int List.list -> int List.list = List.map (fun x -> x * 2)
+let double_list : int List.list -> int List.list =
+    List.map (fun x -> x * 2) (* 部分適用 *)
 \end{verbatimtab}
         \end{exampleblock}
-
-        \footnote{知らない人は
-        \cite{igarashi}, \cite{ksuenaga}
-        辺りを参照}
+        \footnote{function は fun x -> match x with の構文糖衣}
+        関数 map を持つモジュール List を定義し, List で定義したリストの各要素を2倍にする関数 double\_list を定義
     \end{frame}
 
-    \begin{frame}[fragile]\frametitle{やること}
+    \begin{frame}[fragile]\frametitle{もくじ}
         \begin{itemize}
-            \item ここ数年で言語の更新や新機能の追加が加速した気がする
-            \item OCaml 書いててこんなんできるんだ〜ってなったを紹介
+            \item Extensible Variant Type
+            \item Polymorphic Variant
+            \item Monadic bind
+            \item PPX
+            \item Type Construct over Signatures \& Substituting inside a Signature
         \end{itemize}
     \end{frame}
 
     \begin{frame}[fragile]\frametitle{Extensible Variant Type}
         \begin{itemize}
             \item コンストラクタを後で追加できる(???)
-            \item よく Error.t 型で使われる
         \end{itemize}
         \begin{exampleblock}{Extensible Variant Type}
             \scriptsize
@@ -180,11 +199,33 @@ type t +=
         \end{exampleblock}
     \end{frame}
 
+
+    \begin{frame}[fragile]\frametitle{Extensible Variant Type}
+        \begin{itemize}
+            \item よく Result モナドの Error.t 型の方で使われる
+        \end{itemize}
+        \begin{exampleblock}{Extensible Variant Type}
+            \scriptsize
+            \begin{verbatimtab}
+module Error = struct
+    type t = ..
+    type t += Fatal of string
+end
+type 'a result = Ok of 'a | Error of Error.t
+
+module Arith = struct
+    type Error.t += Overflow | ZeroDivision
+    let div a b = if b = 0 then (Error ZeroDivision) else Ok (a/b)
+end
+\end{verbatimtab}
+        \end{exampleblock}
+    \end{frame}
+
     \begin{frame}[fragile]\frametitle{Polymorphic Variant}
         \begin{itemize}
             \item どの型にも属さないコンストラクタ 通称タグ
             \begin{itemize}
-                \item 先頭が ` で始まる
+                \item 先頭が `(バッククォート) で始まる
             \end{itemize}
             \item 型宣言なしで使えるが, 型注釈してもよい
             \begin{itemize}
@@ -198,6 +239,7 @@ type myvariant = [`Tag1 of int | `Tag2 of bool]
 let f = function
     | #myvariant -> "myvariant" (* myvariant 型に属する tag 全てにマッチ *)
     | `Tag3 -> "Tag3"
+======
 val f : [< `Tag1 of int | `Tag2 of bool | `Tag3 ] -> string
 \end{verbatimtab}
         \end{exampleblock}
@@ -218,6 +260,7 @@ let f = function
 let g = function
     | #t as t -> t
     | x -> x
+======
 val f : [< `A | `B | `C | `D ] -> [> `A | `B | `C | `E ] = <fun>
 val g : ([> t ] as 'a) -> 'a = <fun>
 \end{verbatimtab}
@@ -258,8 +301,7 @@ let (>>=) = bind
 
 both (return 1) (return 2) >>= (fun (x, y) ->
 return 3 >>= (fun z ->
-return (x + y + z)))
-\end{verbatimtab}
+return (x + y + z)))\end{verbatimtab}
     \end{exampleblock}
 \end{frame}
 
@@ -287,33 +329,32 @@ return (x + y + z)))\end{verbatimtab}
     \end{frame}
 
 
-    \begin{frame}[fragile]\frametitle{ppx}
-        PreProcessor eXtension
+    \begin{frame}[fragile]\frametitle{PPX (PreProcessor eXtension)\cite{ppx}}
+        {\small
         \begin{itemize}
             \item literal, attribute, extension point を埋め込める
             \item コードの AST から AST へ変換する関数を前処理で実行できる
             \begin{itemize}
                 \item 型付け前なので型情報は無い
             \end{itemize}
-            \item monadic なキーワード, リテラル, マクロ, コード生成などに
+            \item  マクロ, リテラル, コード生成, monadic なキーワード定義などに
         \end{itemize}
+        }
         \begin{exampleblock}{ppx}
             \scriptsize
             \begin{verbatimtab}
-123456z ==> Z.of_int 123456 (* 多倍長整数へ変換 *)
+123456z ==> Z.of_int 123456 (* literal. 多倍長整数へ変換 *)
 
 type point3d = float * float * float
-[@@deriving show] (* show 関数を自動定義 *)
+[@@deriving show] (* attribute. show 関数を自動定義 *)
 
-match%lwt x with ... === [%lwt match x with ...]
-==> Lwt.bind x (function ...) (* モナドで持ち上がった x を展開 *)
-            \end{verbatimtab}
+match%lwt x with ... ==> [%lwt match x with ...] (* exptention point *)
+==> Lwt.bind x (function ...) (* モナドで持ち上がった x を展開 *)\end{verbatimtab}
         \end{exampleblock}
-        \footnote{\url{https://dailambda.jp/slides/2021-04-09-ppx.html\#/what-is-ppx-1}}
     \end{frame}
 
 
-    \begin{frame}[fragile]\frametitle{Type Construct Over signatures}
+    \begin{frame}[fragile]\frametitle{Type Construct Over Signatures\footnote{それっぽい呼び方見つからなかったので適当につけた}}
         \begin{itemize}
             \item module名 with type t = u とすると, 型同士の制約を追記できる
         \end{itemize}
@@ -325,23 +366,21 @@ module type Monad = sig
     val return : 'a -> 'a t
     val bind : 'a t -> ('a -> 'b t) -> 'b t
 end
-
 module type OptionMonad : Monad with type 'a t = 'a option
-===
-module type OptionMonad =
-  sig
+======
+module type OptionMonad = sig
     type 'a t = 'a option
     val return : 'a -> 'a t
     val bind : 'a t -> ('a -> 'b t) -> 'b t
-  end
-            \end{verbatimtab}
+  end\end{verbatimtab}
         \end{exampleblock}
     \end{frame}
 
 
-    \begin{frame}[fragile]\frametitle{Substituting inside a signature}
+    \begin{frame}[fragile]\frametitle{Substituting inside a Signature}
         \begin{itemize}
             \item module名 with type t := u とすると, t を uで書き換える(??)
+            \footnote{最近 module type を module type で代入できるようになった(??)}
         \end{itemize}
         \begin{exampleblock}{Substituting inside a signature}
             \scriptsize
@@ -351,17 +390,13 @@ module type Monad = sig
     val return : 'a -> 'a t
     val bind : 'a t -> ('a -> 'b t) -> 'b t
 end
-
 module type OptionMonad : Monad with type 'a t := 'a option
-===
-module type OptionMonad =
-  sig
+======
+module type OptionMonad = sig
     val return : 'a -> 'a option
     val bind : 'a option -> ('a -> 'b option) -> 'b option
-  end
-            \end{verbatimtab}
+  end\end{verbatimtab}
         \end{exampleblock}
-        \footnote{最近 module type を module type で代入できるようになった(??)}
     \end{frame}
 
     \begin{frame}[fragile]\frametitle{紹介しなかったトピック}
@@ -370,9 +405,39 @@ module type OptionMonad =
             \begin{itemize}
                 \item 未だに書いたこと無い...
             \end{itemize}
-            \item GADT (Explicit polymorphic Annotations + Locally Abstract Type)
-            \item Pretty Printer
+            \item GADT \cite{gadt}
+            \begin{itemize}
+                \item Explicit polymorphic Annotations + Locally Abstract Type の謎記法
+            \end{itemize}
+            \item Pretty Printer\cite{pp}
         \end{itemize}
+    \end{frame}
+
+    \begin{frame}[fragile]\frametitle{最後に}
+        \begin{block}{Quiz}
+            \scriptsize
+        \begin{verbatimtab}
+type _ expr =
+| Int : int -> int expr
+| Add : (int -> int -> int) expr
+| App : ('a -> 'b) expr * 'a expr -> 'b expr
+
+let rec eval [% ??? ] = function
+| Int n -> n
+| Add -> (+)
+| App (f, x) -> eval f (eval x)\end{verbatimtab}
+        \end{block}
+        \lbrack \% ??? \rbrack に入れてコンパイルが通るのは次のうちどれでしょう？
+    \end{frame}
+
+    \begin{frame}[fragile]\frametitle{最後に}
+        \begin{enumerate}[1]
+            \item (type t) : t expr -> t
+            \item : type t. t expr -> t
+            \item : t. t expr -> t
+            \item : 't. 't expr -> 't
+            \item 実は何も書かなくてもいける
+        \end{enumerate}
     \end{frame}
 
     \begin{frame}[allowframebreaks]\frametitle{\foekfamily REFERENCES}
@@ -383,6 +448,9 @@ module type OptionMonad =
         \bibitem{RR} \url{https://ocaml.org/manual/index.html}
         \bibitem{igarashi} \url{https://hackmd.io/@aigarashi/r1az0wOHP/\%2FBsXrOToESu-Q30kiM_PAmg}
         \bibitem{ksuenaga} \url{https://github.com/kuis-isle3sw/IoPLMaterials/blob/master/textbook/slides/ocaml.pdf}
+        \bibitem{ppx} \url{https://dailambda.jp/slides/2021-04-09-ppx.html\#/what-is-ppx-1}
+        \bibitem{gadt} \url{https://www.math.nagoya-u.ac.jp/~garrigue/papers/ml2011-show.pdf}
+        \bibitem{pp} \url{https://qnighy.hatenablog.com/entry/2017/01/26/215948}
         \end{thebibliography}
     \end{frame}
 
